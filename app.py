@@ -1,8 +1,10 @@
 import os
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template_string, request
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+import requests
+from ua_parser import user_agent_parser
 
 # Cargar variables de entorno
 load_dotenv(override=True)
@@ -26,14 +28,19 @@ def get_db_connection():
 )
     print(conn)
     return conn
-
+def get_location_from_ip(ip):
+    try:
+        response = requests.get(f"https://ipapi.co/{ip}/json/").json()
+        return {
+            "city": response.get("city", "Desconocido"),
+            "region": response.get("region", "Desconocido"),
+            "country": response.get("country_name", "Desconocido")
+        }
+    except:
+        return {"city": "Desconocido", "region": "Desconocido", "country": "Desconocido"}
 # Ruta para mostrar los datos de la tarjeta
 @app.route('/card/<int:card_id>')
 def show_card(card_id):
-    #conn_str = f"dbname='{os.environ.get('DB_NAME')}' user='{os.environ.get('DB_USER')}' password='{os.environ.get('DB_PASSWORD')}' host='{os.environ.get('DB_HOST')}'"
-    
-    print("holaa")
-    
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -46,16 +53,29 @@ def show_card(card_id):
         conn.close()
         return jsonify({"error": "Tarjeta no encontrada"}), 404
     
-    # Registrar el escaneo
-    cur.execute("INSERT INTO scans (card_id) VALUES (%s)", (card_id,))
+    # Capturar métricas avanzadas
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent", "Desconocido")
+    device_info = user_agent_parser.Parse(user_agent)
+    location = get_location_from_ip(ip)
+    
+    # Registrar escaneo con métricas
+    cur.execute("""
+        INSERT INTO scans (card_id, ip, device, city, region, country)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (
+        card_id, ip, f"{device_info['user_agent']['family']} ({device_info['os']['family']})",
+        location["city"], location["region"], location["country"]
+    ))
     conn.commit()
     
-    # Plantilla HTML sencilla para mostrar los datos
+    # HTML para mostrar datos
     html = """
-    <h1>Tarjeta de Presentación</h1>
+    <h1>Tarjeta NFC</h1>
     <p><strong>Nombre:</strong> {{ name }}</p>
     <p><strong>Email:</strong> {{ email }}</p>
     <p><strong>Teléfono:</strong> {{ phone }}</p>
+    <p><a href='https://tu-app.onrender.com/subscribe'>Suscríbete para métricas avanzadas</a></p>
     """
     cur.close()
     conn.close()
@@ -67,12 +87,53 @@ def get_metrics(card_id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     
+    # Verificar si el dueño está suscrito
+    cur.execute("SELECT owner_id FROM cards WHERE id = %s", (card_id,))
+    card = cur.fetchone()
+    if not card:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Tarjeta no encontrada"}), 404
+    
+    cur.execute("SELECT subscribed FROM users WHERE id = %s", (card["owner_id"],))
+    user = cur.fetchone()
+    is_subscribed = user and user["subscribed"]
+    
+    # Métricas básicas (gratis)
     cur.execute("SELECT COUNT(*) as scan_count FROM scans WHERE card_id = %s", (card_id,))
-    metrics = cur.fetchone()
+    basic_metrics = cur.fetchone()
+    
+    if not is_subscribed:
+        cur.close()
+        conn.close()
+        return jsonify({
+            "card_id": card_id,
+            "scan_count": basic_metrics["scan_count"],
+            "message": "Suscríbete para métricas avanzadas (IP, dispositivo, ubicación)"
+        })
+    
+    # Métricas avanzadas (suscripción)
+    cur.execute("""
+        SELECT ip, device, city, region, country, scan_time
+        FROM scans WHERE card_id = %s
+        ORDER BY scan_time DESC
+    """, (card_id,))
+    advanced_metrics = cur.fetchall()
     
     cur.close()
     conn.close()
-    return jsonify({"card_id": card_id, "scan_count": metrics["scan_count"]})
+    return jsonify({
+        "card_id": card_id,
+        "scan_count": basic_metrics["scan_count"],
+        "details": advanced_metrics
+    })
+@app.route('/subscribe')
+def subscribe():
+    return """
+    <h1>Suscripción</h1>
+    <p>Por solo $5/mes, obtén métricas avanzadas para tus tarjetas NFC.</p>
+    <p>Contacta al equipo: soporte@tu-emprendimiento.com</p>
+    """
 
 # Insertar una tarjeta de prueba (ejecutar una vez)
 def insert_test_card():
