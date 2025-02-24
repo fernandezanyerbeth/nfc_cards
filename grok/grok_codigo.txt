@@ -1,0 +1,173 @@
+¡Buenas noches! Me encanta tu idea de un emprendimiento con tarjetas de presentación NFC. Vamos a crear una solución sencilla pero funcional usando Python y PostgreSQL, y como no tienes un servidor ni dominio por ahora, usaremos servicios gratuitos para probarlo en la nube. Te explicaré todo paso a paso para que sea claro y puedas implementarlo. La app será una API básica que compartirá una URL con datos y registrará métricas (como cuántas veces se escanea una tarjeta).
+Plan General
+Backend Usaremos Flask (un framework ligero de Python) para crear una API.
+Base de Datos PostgreSQL para almacenar las tarjetas y las métricas.
+Despliegue Usaremos Render.com (gratuito para proyectos básicos) para alojar la app sin necesidad de un servidor propio.
+NFC La URL en la tarjeta apuntará a nuestra API, y cada escaneo registrará una métrica.
+Paso 1 Configurar el entorno
+Necesitarás Python instalado (supongo que ya lo tienes) y PostgreSQL. Además, instalaremos algunas librerías.
+Instalación
+Abre tu terminal y crea un entorno virtual
+bash
+python -m venv venv
+source venvbinactivate  # En Windows venvScriptsactivate
+Instala las dependencias
+bash
+pip install flask psycopg2-binary python-dotenv
+Paso 2 Estructura del Proyecto
+Crea esta estructura de carpetas
+nfc_cards
+├── app.py
+├── .env
+└── requirements.txt
+app.py Código principal de la API.
+.env Archivo para variables de entorno (como la conexión a la base de datos).
+requirements.txt Lista de dependencias.
+En requirements.txt, agrega
+flask
+psycopg2-binary
+python-dotenv
+Paso 3 Configurar PostgreSQL Localmente
+Instala PostgreSQL si no lo tienes (descarga desde postgresql.org).
+Crea una base de datos llamada nfc_cards
+Abre la terminal de PostgreSQL (psql) o usa una interfaz como pgAdmin.
+Ejecuta
+sql
+CREATE DATABASE nfc_cards;
+Conéctate a nfc_cards y crea una tabla para las tarjetas y otra para las métricas
+sql
+c nfc_cards
+CREATE TABLE cards (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    url VARCHAR(255) UNIQUE
+);
+
+CREATE TABLE scans (
+    id SERIAL PRIMARY KEY,
+    card_id INTEGER REFERENCES cards(id),
+    scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+Paso 4 Código de la API (app.py)
+Este código creará una API con dos endpoints
+cardcard_id Mostrará los datos de la tarjeta y registrará el escaneo.
+metricscard_id Mostrará cuántas veces se ha escaneado una tarjeta.
+python
+import os
+from flask import Flask, jsonify, render_template_string
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
+
+app = Flask(__name__)
+
+# Conexión a la base de datos
+def get_db_connection()
+    conn = psycopg2.connect(
+        host=localhost,
+        database=nfc_cards,
+        user=os.getenv(DB_USER),  # Tu usuario de PostgreSQL
+        password=os.getenv(DB_PASSWORD)  # Tu contraseña de PostgreSQL
+    )
+    return conn
+
+# Ruta para mostrar los datos de la tarjeta
+@app.route('cardintcard_id')
+def show_card(card_id)
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Obtener datos de la tarjeta
+    cur.execute(SELECT  FROM cards WHERE id = %s, (card_id,))
+    card = cur.fetchone()
+    
+    if not card
+        cur.close()
+        conn.close()
+        return jsonify({error Tarjeta no encontrada}), 404
+    
+    # Registrar el escaneo
+    cur.execute(INSERT INTO scans (card_id) VALUES (%s), (card_id,))
+    conn.commit()
+    
+    # Plantilla HTML sencilla para mostrar los datos
+    html = 
+    h1Tarjeta de Presentaciónh1
+    pstrongNombrestrong {{ name }}p
+    pstrongEmailstrong {{ email }}p
+    pstrongTeléfonostrong {{ phone }}p
+    
+    cur.close()
+    conn.close()
+    return render_template_string(html, card)
+
+# Ruta para ver métricas
+@app.route('metricsintcard_id')
+def get_metrics(card_id)
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cur.execute(SELECT COUNT() as scan_count FROM scans WHERE card_id = %s, (card_id,))
+    metrics = cur.fetchone()
+    
+    cur.close()
+    conn.close()
+    return jsonify({card_id card_id, scan_count metrics[scan_count]})
+
+# Insertar una tarjeta de prueba (ejecutar una vez)
+def insert_test_card()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        INSERT INTO cards (name, email, phone, url)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (url) DO NOTHING
+    , (Juan Pérez, juan@example.com, 123-456-7890, httplocalhost5000card1))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+if __name__ == __main__
+    insert_test_card()  # Inserta una tarjeta de prueba al iniciar
+    app.run(debug=True)
+Paso 5 Configurar Variables de Entorno (.env)
+Crea el archivo .env con tus credenciales de PostgreSQL
+DB_USER=tu_usuario
+DB_PASSWORD=tu_contraseña
+Paso 6 Probar Localmente
+Activa el entorno virtual (source venvbinactivate).
+Ejecuta la app
+bash
+python app.py
+Abre tu navegador y visita httplocalhost5000card1. Verás los datos de la tarjeta y se registrará un escaneo.
+Visita httplocalhost5000metrics1 para ver cuántas veces se ha escaneado.
+Paso 7 Desplegar en Render.com (Gratis)
+Como no tienes un servidor, usaremos Render para alojar la app y hacerla accesible desde cualquier teléfono.
+Regístrate en Render.com.
+Crea un nuevo Web Service y conecta un repositorio Git (sube tu proyecto a GitHub primero).
+Configura
+Build Command pip install -r requirements.txt
+Start Command gunicorn appapp
+Environment Agrega las variables DB_USER y DB_PASSWORD.
+Para la base de datos, Render ofrece PostgreSQL gratis
+Crea un PostgreSQL en Render.
+Copia la URL de conexión (incluye host, usuario, contraseña) y ajusta get_db_connection() en app.py
+python
+conn = psycopg2.connect(os.getenv(DATABASE_URL))
+Despliega y obtén una URL pública como httpstu-app.onrender.com.
+Paso 8 Configurar NFC
+Usa una app como NFC Tools en tu teléfono.
+Graba la URL de tu tarjeta (ej. httpstu-app.onrender.comcard1) en una tarjeta NFC.
+Escanea con cualquier teléfono compatible con NFC y verás los datos.
+Paso 9 Ver Métricas
+Visita httpstu-app.onrender.commetrics1 para ver cuántas veces se escaneó.
+Notas Finales
+Escalabilidad Esto es básico, pero puedes agregar autenticación o más datos según crezca tu emprendimiento.
+Pruebas reales Funciona desde cualquier red porque Render te da una URL pública.
+Código explicado Cada parte está comentada en app.py. Si tienes dudas, pregunta.
+¿Te queda claro ¿Quieres ajustar algo o necesitas ayuda con algún paso ¡Éxito con tu emprendimiento!

@@ -1,0 +1,108 @@
+Para probarlo con tu tarjeta NFC, sigue estos pasos según el dispositivo que estés usando:
+
+📱 Probar con un teléfono Android o iPhone
+Si escaneas tu tarjeta NFC con un dispositivo móvil, necesitas que la tarjeta contenga una URL NFC que apunte a tu servidor Flask.
+
+1️⃣ Escribir una URL en la tarjeta NFC
+Debes escribir una URL en tu tarjeta NFC para que, al escanearla, el teléfono acceda automáticamente al servidor Flask.
+
+➡️ Con Android
+Instala la app NFC Tools en la Play Store.
+Abre la app y ve a la pestaña "Escribir".
+Toca "Añadir un registro" y selecciona "URL/URI".
+Introduce la URL de tu servidor Flask:
+bash
+Copiar
+Editar
+http://tu-servidor:5000/track?id=mi_tarjeta
+(Reemplaza tu-servidor con la IP de tu servidor.)
+Pulsa "Escribir" y acerca tu tarjeta NFC.
+➡️ Con iPhone
+Usa la app NFC Tools o Atajos de iOS para escribir la URL en la tarjeta.
+Si tienes un iPhone reciente (iPhone XS o superior), puedes escanear la tarjeta directamente desde la pantalla de inicio y Safari abrirá la URL.
+2️⃣ Escanear la tarjeta
+Ahora, simplemente acerca tu tarjeta NFC al teléfono:
+
+Android: Si la URL se escribió correctamente, el navegador abrirá la URL de tu servidor Flask.
+iPhone: Safari debería abrir automáticamente la URL.
+Si todo funciona bien, deberías ver la respuesta en JSON en la pantalla del teléfono.
+
+📡 Si tu servidor Flask está en otra red
+Si tu teléfono y tu servidor no están en la misma red, usa un servicio como ngrok para exponer Flask a Internet.
+
+Dime si quieres hacer esto y te guío. 🚀
+
+
+
+
+
+
+Tú dijiste:
+o puedo usar ngix ? 
+ChatGPT Plus
+Sí, puedes usar Nginx como proxy inverso para exponer tu servidor Flask en la red y permitir que cualquier dispositivo (Android o iPhone) acceda a él fácilmente.
+
+🔹 Opción 1: Usar ngrok (rápido y fácil)
+Si solo quieres hacer una prueba rápida sin configurar servidores adicionales, ngrok es la mejor opción. Te crea una URL pública temporal.
+🔹 Dime si quieres seguir esta opción y te guío.
+
+🔹 Opción 2: Configurar Nginx como proxy inverso
+Si prefieres hacerlo con Nginx, sigue estos pasos:
+
+1️⃣ Instalar Nginx
+Si no lo tienes instalado, hazlo con:
+
+bash
+Copiar
+Editar
+sudo apt update
+sudo apt install nginx -y
+2️⃣ Configurar Nginx como proxy inverso
+Crea un archivo de configuración para tu aplicación Flask:
+
+bash
+Copiar
+Editar
+sudo nano /etc/nginx/sites-available/flask_nfc
+Añade este contenido:
+
+nginx
+Copiar
+Editar
+server {
+    listen 80;
+    server_name tu_dominio.com;  # O usa la IP del servidor si no tienes dominio
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+Guarda y cierra (CTRL + X, luego Y y Enter).
+
+3️⃣ Habilitar la configuración y reiniciar Nginx
+bash
+Copiar
+Editar
+sudo ln -s /etc/nginx/sites-available/flask_nfc /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+4️⃣ Probar la conexión
+Abre en tu navegador:
+arduino
+Copiar
+Editar
+http://tu-servidor/
+(Reemplaza tu-servidor con la IP o dominio de tu máquina).
+Si funciona, ahora puedes escribir la URL en la tarjeta NFC:
+bash
+Copiar
+Editar
+http://tu-servidor/track?id=mi_tarjeta
+Así, cuando escanees la tarjeta, accederá a tu servidor Flask a través de Nginx.
+¿Cuál opción prefieres?
+1️⃣ ngrok para pruebas rápidas.
+2️⃣ Nginx para un despliegue más estable en la red.
+
+Si eliges Nginx y tienes algún problema, dime en qué paso te atascaste. 🚀
