@@ -5,7 +5,7 @@ from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 
@@ -15,14 +15,19 @@ def get_db_connection():
         host='localhost',
         port=5433,
         database='nfc',
-        user='postgres',  # Tu usuario de PostgreSQL
-        password=18626622  # Tu contraseña de PostgreSQL
+        user=os.environ.get('DB_USER'),  # Tu usuario de PostgreSQL
+        password=os.environ.get('DB_PASSWORD')  # Tu contraseña de PostgreSQL
     )
+    
     return conn
 
 # Ruta para mostrar los datos de la tarjeta
 @app.route('/card/<int:card_id>')
 def show_card(card_id):
+    #conn_str = f"dbname='{os.environ.get('DB_NAME')}' user='{os.environ.get('DB_USER')}' password='{os.environ.get('DB_PASSWORD')}' host='{os.environ.get('DB_HOST')}'"
+    
+    print("holaa")
+    
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     
