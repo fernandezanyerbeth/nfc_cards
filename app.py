@@ -88,7 +88,7 @@ def get_metrics(card_id):
     cur = conn.cursor(cursor_factory=RealDictCursor)
     
     # Verificar si el dueño está suscrito
-    cur.execute("SELECT owner_id FROM cards WHERE id = %s", (card_id,))
+    cur.execute("SELECT id FROM cards WHERE id = %s", (card_id,))
     card = cur.fetchone()
     if not card:
         cur.close()
