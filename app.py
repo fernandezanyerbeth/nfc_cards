@@ -89,4 +89,5 @@ def insert_test_card():
 
 if __name__ == "__main__":
     insert_test_card()  # Inserta una tarjeta de prueba al iniciar
+    print("entrando en la app")
     app.run(debug=True)
