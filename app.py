@@ -11,14 +11,20 @@ app = Flask(__name__)
 
 # Conexión a la base de datos
 def get_db_connection():
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = os.environ.get("DB_PORT")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASSWORD = os.environ.get("DB_PASSWORD")
+
     conn = psycopg2.connect(
-        host='localhost',
-        port=5433,
-        database='nfc',
-        user=os.environ.get('DB_USER'),  # Tu usuario de PostgreSQL
-        password=os.environ.get('DB_PASSWORD')  # Tu contraseña de PostgreSQL
-    )
-    
+    host=DB_HOST,
+    port=DB_PORT,
+    database=DB_NAME,
+    user=DB_USER,
+    password=DB_PASSWORD
+)
+    print(conn)
     return conn
 
 # Ruta para mostrar los datos de la tarjeta
