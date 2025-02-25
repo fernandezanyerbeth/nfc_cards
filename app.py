@@ -43,23 +43,20 @@ def get_location_from_ip(ip):
 def show_card(card_id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    
-    # Obtener datos de la tarjeta
+
     cur.execute("SELECT * FROM cards WHERE id = %s", (card_id,))
     card = cur.fetchone()
-    
+
     if not card:
         cur.close()
         conn.close()
         return jsonify({"error": "Tarjeta no encontrada"}), 404
-    
-    # Capturar métricas avanzadas
+
     ip = request.remote_addr
     user_agent = request.headers.get("User-Agent", "Desconocido")
     device_info = user_agent_parser.Parse(user_agent)
     location = get_location_from_ip(ip)
-    
-    # Registrar escaneo con métricas
+
     cur.execute("""
         INSERT INTO scans (card_id, ip, device, city, region, country)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -68,30 +65,64 @@ def show_card(card_id):
         location["city"], location["region"], location["country"]
     ))
     conn.commit()
-    
-    # HTML para mostrar datos
-    instagram_url = f"instagram://user?username={card['instagram']}" if card["instagram"] else "#"
-    instagram_fallback = f"https://www.instagram.com/{card['instagram']}/" if card["instagram"] else "#"
-    
-    html = """
-    <h1>Tarjeta NFC</h1>
-    <p><strong>Nombre:</strong> {{ name }}</p>
-    <p><strong>Email:</strong> {{ email }}</p>
-    <p><strong>Teléfono:</strong> {{ phone }}</p>
-    {% if instagram %}
-    <p>
-        <a href="{{ instagram_url }}" 
-           onclick="setTimeout(function(){ window.location='{{ instagram_fallback }}'; }, 500);"
-           style="display: inline-block; padding: 10px 20px; background-color: #E1306C; color: white; text-decoration: none; border-radius: 5px;">
-           Seguir en Instagram
-        </a>
-    </p>
-    {% endif %}
-    <p><a href='https://tu-app.onrender.com/subscribe'>Suscríbete para métricas avanzadas</a></p>
-    """
+
     cur.close()
     conn.close()
-    return render_template_string(html, **card, instagram_url=instagram_url, instagram_fallback=instagram_fallback)
+
+    # Retorna JSON
+    return jsonify(card)  # <-- Cambio importante: retorna card directamente
+#def show_card(card_id):
+ #   conn = get_db_connection()
+  #  cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Obtener datos de la tarjeta
+   # cur.execute("SELECT * FROM cards WHERE id = %s", (card_id,))
+    #card = cur.fetchone()
+    
+    #if not card:
+     #   cur.close()
+      #  conn.close()
+       # return jsonify({"error": "Tarjeta no encontrada"}), 404
+    
+    # Capturar métricas avanzadas
+    #ip = request.remote_addr
+    #user_agent = request.headers.get("User-Agent", "Desconocido")
+    #device_info = user_agent_parser.Parse(user_agent)
+    #location = get_location_from_ip(ip)
+    
+    # Registrar escaneo con métricas
+   # cur.execute("""
+    #    INSERT INTO scans (card_id, ip, device, city, region, country)
+     #   VALUES (%s, %s, %s, %s, %s, %s)
+    #""", (
+     #   card_id, ip, f"{device_info['user_agent']['family']} ({device_info['os']['family']})",
+      #  location["city"], location["region"], location["country"]
+    #))
+    #conn.commit()
+    
+    # HTML para mostrar datos
+    #instagram_url = f"instagram://user?username={card['instagram']}" if card["instagram"] else "#"
+    #instagram_fallback = f"https://www.instagram.com/{card['instagram']}/" if card["instagram"] else "#"
+    
+    #html = """
+    #<h1>Tarjeta NFC</h1>
+    #<p><strong>Nombre:</strong> {{ name }}</p>
+    #<p><strong>Email:</strong> {{ email }}</p>
+    #<p><strong>Teléfono:</strong> {{ phone }}</p>
+    #{% if instagram %}
+    #<p>
+     #   <a href="{{ instagram_url }}" 
+      #     onclick="setTimeout(function(){ window.location='{{ instagram_fallback }}'; }, 500);"
+       #    style="display: inline-block; padding: 10px 20px; background-color: #E1306C; color: white; text-decoration: none; border-radius: 5px;">
+        #   Seguir en Instagram
+        #</a>
+    #</p>
+    #{% endif %}
+    #<p><a href='https://tu-app.onrender.com/subscribe'>Suscríbete para métricas avanzadas</a></p>
+    #"""
+    #cur.close()
+    #conn.close()
+    #return render_template_string(html, **card, instagram_url=instagram_url, instagram_fallback=instagram_fallback)
 
 # Ruta para ver métricas
 @app.route('/metrics/<int:card_id>')
