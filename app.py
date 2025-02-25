@@ -5,6 +5,7 @@ from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 import requests
 from ua_parser import user_agent_parser
+from flask_cors import CORS  # Importa CORS
 
 # Cargar variables de entorno
 load_dotenv(override=True)
