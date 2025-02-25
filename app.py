@@ -11,6 +11,7 @@ from flask_cors import CORS  # Importa CORS
 load_dotenv(override=True)
 
 app = Flask(__name__)
+CORS(app) 
 
 # Conexión a la base de datos
 def get_db_connection():
