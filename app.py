@@ -95,7 +95,7 @@ def get_metrics(card_id):
         conn.close()
         return jsonify({"error": "Tarjeta no encontrada"}), 404
     
-    cur.execute("SELECT subscribed FROM users WHERE id = %s", (card["owner_id"],))
+    cur.execute("SELECT subscribed FROM users WHERE id = %s", (card_id,))
     user = cur.fetchone()
     is_subscribed = user and user["subscribed"]
     
