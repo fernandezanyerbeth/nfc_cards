@@ -70,16 +70,28 @@ def show_card(card_id):
     conn.commit()
     
     # HTML para mostrar datos
+    instagram_url = f"instagram://user?username={card['instagram']}" if card["instagram"] else "#"
+    instagram_fallback = f"https://www.instagram.com/{card['instagram']}/" if card["instagram"] else "#"
+    
     html = """
     <h1>Tarjeta NFC</h1>
     <p><strong>Nombre:</strong> {{ name }}</p>
     <p><strong>Email:</strong> {{ email }}</p>
     <p><strong>Teléfono:</strong> {{ phone }}</p>
+    {% if instagram %}
+    <p>
+        <a href="{{ instagram_url }}" 
+           onclick="setTimeout(function(){ window.location='{{ instagram_fallback }}'; }, 500);"
+           style="display: inline-block; padding: 10px 20px; background-color: #E1306C; color: white; text-decoration: none; border-radius: 5px;">
+           Seguir en Instagram
+        </a>
+    </p>
+    {% endif %}
     <p><a href='https://tu-app.onrender.com/subscribe'>Suscríbete para métricas avanzadas</a></p>
     """
     cur.close()
     conn.close()
-    return render_template_string(html, **card)
+    return render_template_string(html, **card, instagram_url=instagram_url, instagram_fallback=instagram_fallback)
 
 # Ruta para ver métricas
 @app.route('/metrics/<int:card_id>')
