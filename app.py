@@ -122,6 +122,8 @@ def get_metrics(card_id):
     
     cur.close()
     conn.close()
+    print(basic_metrics["scan_count"])
+    print(basic_metrics)
     return jsonify({
         "card_id": card_id,
         "scan_count": basic_metrics["scan_count"],
